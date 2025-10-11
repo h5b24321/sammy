@@ -1,1 +1,210 @@
-Player:Kick("Sammy Dedected Cheat:Sayaonora")
+-- RealBanFake.lua  (LocalScript - StarterPlayerScripts içine koy)
+local Players = game:GetService("Players")
+local ContextActionService = game:GetService("ContextActionService")
+local StarterGui = game:GetService("StarterGui")
+
+local player = Players.LocalPlayer
+local playerName = player and player.Name or "Player"
+local KICK_MESSAGE = "You have been permanently banned.\nAppeal at server owner."
+
+-- ------------- UTILITY -------------
+local function blockInput(actionName, inputState, inputObject)
+	-- tüm inputları yutar
+	return Enum.ContextActionResult.Sink
+end
+
+local function hideDefaultGui()
+	-- Bazı CoreGui elementlerini kapatmaya çalış
+	local ok, err = pcall(function()
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.EmotesMenu, false)
+	end)
+	-- chat için farklı core (bazı oyunlarda SetCore hata atabilir)
+	pcall(function()
+		StarterGui:SetCore("ChatMakeSystemMessage", {
+			Text = "";
+			Color = Color3.new(0,0,0);
+		})
+	end)
+	return ok, err
+end
+
+-- ------------- BAN GUI -------------
+local function createBanGui(reason, bannedBy, timestamp)
+	-- Parent olarak PlayerGui kullan
+	local PlayerGui = player:WaitForChild("PlayerGui")
+
+	local screenGui = Instance.new("ScreenGui")
+	screenGui.Name = "RealisticBanGui"
+	screenGui.ResetOnSpawn = false
+	screenGui.Parent = PlayerGui
+	screenGui.IgnoreGuiInset = true
+
+	local bg = Instance.new("Frame", screenGui)
+	bg.Size = UDim2.new(1,0,1,0)
+	bg.Position = UDim2.new(0,0,0,0)
+	bg.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	bg.BackgroundTransparency = 0
+	bg.BorderSizePixel = 0
+
+	-- kırmızı saydam katman
+	local redLayer = Instance.new("Frame", bg)
+	redLayer.AnchorPoint = Vector2.new(0.5,0.5)
+	redLayer.Size = UDim2.new(0.85,0,0.6,0)
+	redLayer.Position = UDim2.new(0.5,0,0.45,0)
+	redLayer.BackgroundColor3 = Color3.fromRGB(24,8,8)
+	redLayer.BackgroundTransparency = 0
+	redLayer.BorderSizePixel = 0
+	redLayer.ClipsDescendants = true
+	redLayer.Rotation = 0
+
+	local title = Instance.new("TextLabel", redLayer)
+	title.Size = UDim2.new(1, -40, 0.25, -10)
+	title.Position = UDim2.new(0, 20, 0, 15)
+	title.BackgroundTransparency = 1
+	title.Text = "ACCOUNT SUSPENDED"
+	title.TextColor3 = Color3.fromRGB(255, 60, 60)
+	title.TextScaled = true
+	title.Font = Enum.Font.GothamBlack
+	title.TextStrokeTransparency = 0.6
+
+	local mainMsg = Instance.new("TextLabel", redLayer)
+	mainMsg.Size = UDim2.new(1, -60, 0.5, -10)
+	mainMsg.Position = UDim2.new(0, 30, 0.25, 10)
+	mainMsg.BackgroundTransparency = 1
+	mainMsg.Text = "Sammy has banned your account.\n\nReason: "..(reason or "Violation of rules")
+		.."\nBanned by: "..(bannedBy or "Sammy")
+	mainMsg.TextWrapped = true
+	mainMsg.TextYAlignment = Enum.TextYAlignment.Top
+	mainMsg.TextScaled = false
+	mainMsg.Font = Enum.Font.Gotham
+	mainMsg.TextColor3 = Color3.fromRGB(255, 200, 200)
+	mainMsg.TextSize = 20
+
+	local small = Instance.new("TextLabel", redLayer)
+	small.Size = UDim2.new(1, -60, 0.18, 0)
+	small.Position = UDim2.new(0, 30, 0.75, 0)
+	small.BackgroundTransparency = 1
+	small.Text = "Account: "..playerName.."   |   Date: "..(timestamp or os.date("%Y-%m-%d"))
+	small.TextWrapped = false
+	small.TextScaled = false
+	small.Font = Enum.Font.Gotham
+	small.TextColor3 = Color3.fromRGB(200,200,200)
+	small.TextSize = 16
+
+	-- Appeal butonu (sadece gösterir)
+	local appealBtn = Instance.new("TextButton", redLayer)
+	appealBtn.Size = UDim2.new(0.25, 0, 0.12, 0)
+	appealBtn.Position = UDim2.new(0.725, 0, 0.82, 0)
+	appealBtn.AnchorPoint = Vector2.new(0,0)
+	appealBtn.Text = "APPEAL"
+	appealBtn.Font = Enum.Font.GothamSemibold
+	appealBtn.TextScaled = true
+	appealBtn.BackgroundColor3 = Color3.fromRGB(35,35,35)
+	appealBtn.TextColor3 = Color3.fromRGB(255,255,255)
+	appealBtn.BorderSizePixel = 0
+
+	-- appeal tıklanınca küçük bilgi penceresi
+	local function showAppealInfo()
+		local info = Instance.new("Frame", redLayer)
+		info.Size = UDim2.new(0.9,0,0.55,0)
+		info.Position = UDim2.new(0.05,0,0.2,0)
+		info.BackgroundTransparency = 0.15
+		info.BackgroundColor3 = Color3.fromRGB(0,0,0)
+		info.BorderSizePixel = 0
+
+		local infoText = Instance.new("TextLabel", info)
+		infoText.Size = UDim2.new(1, -20, 1, -20)
+		infoText.Position = UDim2.new(0,10,0,10)
+		infoText.TextWrapped = true
+		infoText.BackgroundTransparency = 1
+		infoText.Text = "To appeal, contact the server owner or staff with your username and reason. This is a fictional appeal UI."
+		infoText.TextColor3 = Color3.fromRGB(220,220,220)
+		infoText.Font = Enum.Font.Gotham
+		infoText.TextSize = 14
+
+		appealBtn.Visible = false
+	end
+
+	appealBtn.MouseButton1Click:Connect(showAppealInfo)
+
+	-- üstteki kırmızı çerçeve animasyonu (hafif titreşim / flicker)
+	spawn(function()
+		for i = 1, 6 do
+			redLayer.BackgroundTransparency = 0.05 + (i % 2) * 0.05
+			wait(0.18)
+		end
+		redLayer.BackgroundTransparency = 0
+	end)
+
+	return screenGui
+end
+
+-- ------------- EXECUTE FAKE BAN -------------
+local function doFakeBan()
+	-- blokla inputları
+	ContextActionService:BindAction("BanBlockInput", blockInput, false,
+		Enum.UserInputType.MouseButton1,
+		Enum.UserInputType.MouseButton2,
+		Enum.UserInputType.MouseMovement,
+		Enum.UserInputType.Touch,
+		Enum.UserInputType.Keyboard,
+		Enum.UserInputType.Unknown
+	)
+
+	-- hide default gui (try)
+	pcall(hideDefaultGui)
+
+	-- karakteri dondur
+	if player.Character then
+		local hrp = player.Character:FindFirstChild("HumanoidRootPart")
+		local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			pcall(function()
+				humanoid.WalkSpeed = 0
+				humanoid.JumpPower = 0
+				humanoid.AutoRotate = false
+			end)
+		end
+		-- eğer ragdoll benzeri efekt istenirse buraya eklenebilir
+	end
+
+	-- kamera sapma / titreme efektleri
+	local cam = workspace.CurrentCamera
+	if cam then
+		for i = 1, 8 do
+			cam.CFrame = cam.CFrame * CFrame.new(math.random(-2,2)/30, math.random(-2,2)/30, 0) * CFrame.Angles(0,0,math.rad(math.random(-2,2)))
+			wait(0.06)
+		end
+	end
+
+	-- ban GUI oluştur
+	local gui = createBanGui("Cheating / Exploits", "Sammy", os.date("%Y-%m-%d"))
+
+	-- gerçekçi his için bir sayaç göster (5..1)
+	local countdown = 6
+	spawn(function()
+		while countdown > 1 do
+			countdown = countdown - 1
+			-- ekrana küçük sistem mesajı (isteğe göre)
+			pcall(function()
+				StarterGui:SetCore("SendNotification", {
+					Title = "Account Suspension";
+					Text = "Disconnecting in "..tostring(countdown-1).." seconds...";
+					Duration = 1;
+				})
+			end)
+			wait(1)
+		end
+	end)
+
+	-- final: küçük bekleme sonra kick
+	wait(5) -- 5 saniye sonra çıkar
+	-- Kick mesajı oyuncuya gösterilecek olan mesajla aynı olsun
+	player:Kick("Sammy Banned you. Reason: Cheating. Date: "..os.date("%Y-%m-%d"))
+end
+
+-- çalıştır
+doFakeBan()
