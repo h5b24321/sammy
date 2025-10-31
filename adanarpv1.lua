@@ -1,27 +1,156 @@
--- Adana City RP | Ultra Smart Hub v2.0 (Safe & Fancy)
--- Features: Ultra toast, Infinity Dex, Smooth teleport & bring, HUD, R6 dances, themes, custom particles, dynamic malikane, fancy visual effects
+-- LocalScript (StarterPlayerScripts içine koy)
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 
--- Rayfield Load
+-- ScreenGui oluştur
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "UltraMegaPinkLoading"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- Ana çerçeve
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(1, 0, 1, 0)
+frame.Position = UDim2.new(0, 0, 0, 0)
+frame.BackgroundColor3 = Color3.fromRGB(255, 182, 193)
+frame.BorderSizePixel = 0
+frame.Parent = screenGui
+
+-- Ana gradient glow
+local gradient = Instance.new("UIGradient")
+gradient.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 182, 193)),
+    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 105, 180)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 182, 193))
+}
+gradient.Rotation = 45
+gradient.Parent = frame
+
+-- Yükleme bar arka
+local barBackground = Instance.new("Frame")
+barBackground.Size = UDim2.new(0.6, 0, 0.05, 0)
+barBackground.Position = UDim2.new(0.2, 0, 0.85, 0)
+barBackground.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
+barBackground.BorderSizePixel = 0
+barBackground.Parent = frame
+barBackground.ClipsDescendants = true
+
+-- Bar glow
+local barGlow = Instance.new("UIGradient")
+barGlow.Color = ColorSequence.new{
+    ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 20, 147)),
+    ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 182, 193))
+}
+barGlow.Rotation = 0
+barGlow.Parent = barBackground
+
+-- Bar dolan kısmı
+local bar = Instance.new("Frame")
+bar.Size = UDim2.new(0, 0, 1, 0)
+bar.Position = UDim2.new(0, 0, 0, 0)
+bar.BackgroundColor3 = Color3.fromRGB(255, 20, 147)
+bar.BorderSizePixel = 0
+bar.Parent = barBackground
+
+-- Loading yazısı
+local loadingText = Instance.new("TextLabel")
+loadingText.Size = UDim2.new(0.3, 0, 0.1, 0)
+loadingText.Position = UDim2.new(0.35, 0, 0.75, 0)
+loadingText.BackgroundTransparency = 1
+loadingText.Text = "Loading..."
+loadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
+loadingText.Font = Enum.Font.FredokaOne
+loadingText.TextScaled = true
+loadingText.Parent = frame
+
+-- Parçacık efekti (yıldızlar)
+local particleContainer = Instance.new("Folder")
+particleContainer.Name = "Particles"
+particleContainer.Parent = frame
+
+local function spawnStar()
+    local star = Instance.new("Frame")
+    star.Size = UDim2.new(0, math.random(4, 10), 0, math.random(4, 10))
+    star.Position = UDim2.new(math.random(), 0, math.random(), 0)
+    star.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    star.BackgroundTransparency = 0
+    star.BorderSizePixel = 0
+    star.AnchorPoint = Vector2.new(0.5, 0.5)
+    star.Rotation = math.random(0, 360)
+    star.Parent = particleContainer
+
+    -- Tween yıldız için
+    local starTween = TweenService:Create(star, TweenInfo.new(1 + math.random(), Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        Position = UDim2.new(math.random(), 0, math.random(), 0),
+        Size = UDim2.new(0, 0, 0, 0),
+        BackgroundTransparency = 1,
+        Rotation = star.Rotation + 360
+    })
+    starTween:Play()
+    starTween.Completed:Connect(function()
+        star:Destroy()
+    end)
+end
+
+-- Sürekli yıldız spawn
+local spawnConnection
+spawnConnection = RunService.RenderStepped:Connect(function()
+    if math.random() < 0.05 then
+        spawnStar()
+    end
+end)
+
+-- Bar tween
+local tweenInfo = TweenInfo.new(4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local tweenGoal = {Size = UDim2.new(1, 0, 1, 0)}
+local barTween = TweenService:Create(bar, tweenInfo, tweenGoal)
+barTween:Play()
+
+-- Glow animasyonu
+spawn(function()
+    while barTween.PlaybackState ~= Enum.PlaybackState.Completed do
+        barGlow.Rotation = (barGlow.Rotation + 5) % 360
+        wait(0.03)
+    end
+end)
+
+-- Loading text pulse
+spawn(function()
+    while barTween.PlaybackState ~= Enum.PlaybackState.Completed do
+        for i = 0, 1, 0.05 do
+            loadingText.TextTransparency = i
+            wait(0.03)
+        end
+        for i = 1, 0, -0.05 do
+            loadingText.TextTransparency = i
+            wait(0.03)
+        end
+    end
+end)
+
+-- Tween tamamlandığında fade-out ve temizleme
+barTween.Completed:Connect(function()
 local ok, Rayfield = pcall(function() return loadstring(game:HttpGet('https://sirius.menu/rayfield'))() end)
-if not ok or not Rayfield then warn("Rayfield yüklenemedi!"); return end
+if not ok or not Rayfield then warn("Rayfield yüklenemedi") return end
 
 local Window = Rayfield:CreateWindow({
-    Name = "Adana City RP | Ultra Smart Hub",
-    LoadingTitle = "💎 Yükleniyor...",
-    LoadingSubtitle = "👑 by CostyTR (Safe + Fancy) 👑",
+    Name = "AdanaCityUltra | Adana hub",
+    LoadingTitle = "💎 Uwu...",
+    LoadingSubtitle = "👑 by MR.Script (safe) 👑",
     Theme = "Default",
-    ConfigurationSaving = { Enabled = true, FolderName = "AdanaCityUltraSmart", FileName = "config" },
+    ConfigurationSaving = { Enabled = true, FolderName = "AdanaCityUltra", FileName = "config" },
     KeySystem = false
 })
 
--- Services
+-- ===== Services =====
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local Lighting = game:GetService("Lighting")
-
 local localPlayer = Players.LocalPlayer
 local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
 
@@ -30,234 +159,231 @@ local function refreshCharacter()
 end
 localPlayer.CharacterAdded:Connect(function() wait(0.1); refreshCharacter() end)
 
--- -------------------- TOAST SYSTEM (Ultra Fancy) --------------------
-local toastGui, toastList, toastY = nil, {}, 10
-local function ensureToastGui()
-    if toastGui and toastGui.Parent then return toastGui end
-    toastGui = Instance.new("ScreenGui")
-    toastGui.Name = "AdanaCityToasts"
-    toastGui.ResetOnSpawn = false
-    toastGui.Parent = localPlayer:WaitForChild("PlayerGui")
-    return toastGui
-end
-
-local function showToast(title, text, duration, color, icon)
-    ensureToastGui()
+-- ===== Toast Sistem =====
+local toastGui
+local toastY = 10
+local function showToast(title,text,duration,color)
+    toastGui = toastGui or Instance.new("ScreenGui",localPlayer:WaitForChild("PlayerGui"))
+    toastGui.Name="UltraMegaFXToasts"
     duration = duration or 3
-    color = color or Color3.fromRGB(35,35,35)
-    
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(0, 320, 0, 70)
-    frame.Position = UDim2.new(1, 350, 0, toastY)
-    frame.BackgroundColor3 = color
-    frame.BackgroundTransparency = 0.08
-    frame.AnchorPoint = Vector2.new(0,0)
-    frame.Name = "Toast"
-    frame.Parent = toastGui
-    frame.ZIndex = 10
-    
-    -- Icon
-    if icon then
-        local img = Instance.new("ImageLabel", frame)
-        img.Size = UDim2.new(0,32,0,32)
-        img.Position = UDim2.new(0,5,0,19)
-        img.BackgroundTransparency=1
-        img.Image = icon
-    end
-    
-    -- Title
-    local titleLbl = Instance.new("TextLabel", frame)
-    titleLbl.Size = UDim2.new(1, -50, 0, 24)
-    titleLbl.Position = UDim2.new(0, 45, 0, 8)
-    titleLbl.BackgroundTransparency = 1
-    titleLbl.Text = title
-    titleLbl.TextXAlignment = Enum.TextXAlignment.Left
-    titleLbl.Font = Enum.Font.SourceSansBold
-    titleLbl.TextSize = 18
-    titleLbl.TextColor3 = Color3.new(1,1,1)
-    
-    -- Text
-    local textLbl = Instance.new("TextLabel", frame)
-    textLbl.Size = UDim2.new(1, -50, 0, 28)
-    textLbl.Position = UDim2.new(0, 45, 0, 32)
-    textLbl.BackgroundTransparency = 1
-    textLbl.Text = text
-    textLbl.TextXAlignment = Enum.TextXAlignment.Left
-    textLbl.Font = Enum.Font.SourceSans
-    textLbl.TextSize = 14
-    textLbl.TextColor3 = Color3.new(0.9,0.9,0.9)
-    
-    -- Tween In
-    TweenService:Create(frame, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position=UDim2.new(1,-330,0,toastY)}):Play()
-    
-    toastY = toastY + 75
-    delay(duration, function()
-        TweenService:Create(frame, TweenInfo.new(0.25), {Position=UDim2.new(1,350,0,toastY)}):Play()
+    color = color or Color3.fromRGB(30,30,30)
+    local frame = Instance.new("Frame",toastGui)
+    frame.Size=UDim2.new(0,320,0,60)
+    frame.Position=UDim2.new(1,320,0,toastY)
+    frame.BackgroundColor3=color
+    frame.BackgroundTransparency=0.08
+    frame.AnchorPoint=Vector2.new(1,0)
+    frame.ZIndex = 5
+    local titleLbl = Instance.new("TextLabel",frame)
+    titleLbl.Size=UDim2.new(1,-10,0,24)
+    titleLbl.Position=UDim2.new(0,5,0,4)
+    titleLbl.BackgroundTransparency=1
+    titleLbl.Text=title
+    titleLbl.TextXAlignment=Enum.TextXAlignment.Left
+    titleLbl.Font=Enum.Font.SourceSansBold
+    titleLbl.TextSize=18
+    titleLbl.TextColor3=Color3.new(1,1,1)
+    local textLbl = Instance.new("TextLabel",frame)
+    textLbl.Size=UDim2.new(1,-10,0,28)
+    textLbl.Position=UDim2.new(0,5,0,28)
+    textLbl.BackgroundTransparency=1
+    textLbl.Text=text
+    textLbl.TextXAlignment=Enum.TextXAlignment.Left
+    textLbl.Font=Enum.Font.SourceSans
+    textLbl.TextSize=14
+    textLbl.TextColor3=Color3.new(0.9,0.9,0.9)
+    TweenService:Create(frame,TweenInfo.new(0.35,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Position=UDim2.new(1,-10,0,toastY)}):Play()
+    toastY = toastY + 70
+    delay(duration,function()
+        TweenService:Create(frame,TweenInfo.new(0.25),{Position=UDim2.new(1,320,0,toastY)}):Play()
         wait(0.26)
         if frame and frame.Parent then frame:Destroy() end
-        toastY = math.max(10, toastY-75)
+        toastY = math.max(10,toastY-70)
     end)
 end
+local function notify(title,text,dur) showToast(title,text,dur or 3) end
 
-local function notify(title,text,dur,color,icon) showToast(title,text,dur,color,icon) end
-
--- -------------------- HUD: FPS & Ping --------------------
-local hudGui, fpsLabel, pingLabel, frameAvg = nil, nil, nil, {}
-local function ensureHUD()
-    if hudGui and hudGui.Parent then return end
-    hudGui = Instance.new("ScreenGui")
-    hudGui.Name = "AdanaCityHUD"
-    hudGui.ResetOnSpawn=false
-    hudGui.Parent = localPlayer:WaitForChild("PlayerGui")
-    
-    local bg = Instance.new("Frame",hudGui)
-    bg.Size = UDim2.new(0,180,0,55)
-    bg.Position = UDim2.new(0,10,0,10)
-    bg.BackgroundTransparency=0.6
-    bg.BackgroundColor3=Color3.fromRGB(20,20,20)
-    bg.BorderSizePixel=0
-    
-    fpsLabel = Instance.new("TextLabel",bg)
-    fpsLabel.Size=UDim2.new(1,-8,0,24)
-    fpsLabel.Position=UDim2.new(0,4,0,4)
-    fpsLabel.BackgroundTransparency=1
-    fpsLabel.Font=Enum.Font.SourceSans
-    fpsLabel.TextSize=16
-    fpsLabel.TextColor3=Color3.new(1,1,1)
-    fpsLabel.TextXAlignment=Enum.TextXAlignment.Left
-    
-    pingLabel = Instance.new("TextLabel",bg)
-    pingLabel.Size=UDim2.new(1,-8,0,20)
-    pingLabel.Position=UDim2.new(0,4,0,28)
-    pingLabel.BackgroundTransparency=1
-    pingLabel.Font=Enum.Font.SourceSans
-    pingLabel.TextSize=14
-    pingLabel.TextColor3=Color3.new(0.85,0.85,0.85)
-    pingLabel.TextXAlignment=Enum.TextXAlignment.Left
+-- ===== Particle FX =====
+local function spawnFX(color,duration,size,height)
+    local center = (character and character.PrimaryPart and character.PrimaryPart.Position) or Vector3.new(0,5,0)
+    for i=1,20 do
+        local p = Instance.new("Part")
+        p.Size=Vector3.new(size,size,size)
+        p.Position=center+Vector3.new(math.random(-4,4),math.random(0,height),math.random(-4,4))
+        p.Anchored=false
+        p.CanCollide=false
+        p.Material=Enum.Material.Neon
+        p.BrickColor=BrickColor.new(color)
+        p.Parent=workspace
+        Debris:AddItem(p,duration)
+    end
 end
-ensureHUD()
+
+-- ===== Invisible + Dance FX =====
+local danceEmoteId = 180435571
+local danceTrack = nil
+local invisible = false
+
+local function playDance()
+    if not character then return end
+    local humanoid = character:FindFirstChildOfClass("Humanoid")
+    if not humanoid then return end
+    local animator = humanoid:FindFirstChildOfClass("Animator") or Instance.new("Animator", humanoid)
+    if danceTrack then danceTrack:Stop() end
+    local animation = Instance.new("Animation")
+    animation.AnimationId = "rbxassetid://132241001987036"..danceEmoteId
+    danceTrack = animator:LoadAnimation(animation)
+    danceTrack:Play()
+end
+
+local function setInvisible(state)
+    invisible = state
+    if character then
+        for _,p in pairs(character:GetDescendants()) do
+            if p:IsA("BasePart") then
+                p.Transparency = state and 1 or 0
+                p.CanCollide = not state
+            end
+        end
+    end
+    if state then
+        playDance()
+        spawnFX("Bright violet",0.5,0.3,6)
+        notify("Player","Invisible + Dance aktif! 🎉",4)
+        local sound = Instance.new("Sound",workspace)
+        sound.SoundId="rbxassetid://9118829615"
+        sound.Volume=1
+        sound:Play()
+        Debris:AddItem(sound,3)
+    else
+        if danceTrack then danceTrack:Stop() end
+        spawnFX("Bright red",0.5,0.3,4)
+        notify("Player","Invisible kapandı, dans durdu.",3)
+        local sound = Instance.new("Sound",workspace)
+        sound.SoundId="rbxassetid://9118831234"
+        sound.Volume=1
+        sound:Play()
+        Debris:AddItem(sound,3)
+    end
+end
+
+-- ===== Player Tab =====
+local PlayerTab = Window:CreateTab("Player",nil)
+
+PlayerTab:CreateToggle({
+    Name="Invisible + Dance FX",
+    CurrentValue=false,
+    Flag="ps_invisDance",
+    Callback=setInvisible
+})
+
+-- Fly Toggle
+local flying = false
+local flySpeed = 50
+PlayerTab:CreateToggle({
+    Name="Fly",
+    CurrentValue=false,
+    Flag="ps_fly",
+    Callback=function(state)
+        flying = state
+        if state then notify("Fly","Fly aktif! 🎈",3) else notify("Fly","Fly kapalı",2) end
+    end
+})
 
 RunService.RenderStepped:Connect(function(dt)
-    local fps = math.floor(1/dt)
-    table.insert(frameAvg,fps)
-    if #frameAvg>10 then table.remove(frameAvg,1) end
-    local sum=0
-    for _,v in ipairs(frameAvg) do sum=sum+v end
-    local avg=math.floor(sum/#frameAvg)
-    fpsLabel.Text="FPS: "..tostring(avg)
-    pingLabel.Text="Ping: "..tostring(math.floor(localPlayer:GetNetworkPing()*1000)).." ms"
-end)
-
--- -------------------- UTILITY: Find / Bring Models --------------------
-local function findModelByName(query)
-    if not query or query=="" then return {} end
-    local q=string.lower(query)
-    local matches={}
-    for _,obj in pairs(workspace:GetDescendants()) do
-        if obj:IsA("Model") then
-            local name=tostring(obj.Name or "")
-            if string.lower(name)==q or string.find(string.lower(name),q) then table.insert(matches,obj) end
-        elseif obj:IsA("BasePart") then
-            local m=obj:FindFirstAncestorOfClass("Model")
-            if m then local name=tostring(m.Name or ""); if string.lower(name)==q or string.find(string.lower(name),q) then table.insert(matches,m) end end
+    if flying and character and character.PrimaryPart then
+        local direction = Vector3.new()
+        if UserInputService:IsKeyDown(Enum.KeyCode.W) then direction = direction + character.PrimaryPart.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.S) then direction = direction - character.PrimaryPart.CFrame.LookVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.A) then direction = direction - character.PrimaryPart.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.D) then direction = direction + character.PrimaryPart.CFrame.RightVector end
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then direction = direction + Vector3.new(0,1,0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then direction = direction - Vector3.new(0,1,0) end
+        if direction.Magnitude>0 then
+            character:SetPrimaryPartCFrame(character.PrimaryPart.CFrame + direction.Unit * flySpeed * dt)
         end
     end
-    local unique, seen = {}, {}
-    for _,m in ipairs(matches) do if not seen[m] then seen[m]=true; table.insert(unique,m) end end
-    return unique
-end
+end)
 
-local function bringModelToPlayer(model)
-    if not model then return false,"Model nil" end
-    local ok, err = pcall(function()
-        if model.PrimaryPart and character and character.PrimaryPart then
-            local pos = character.PrimaryPart.CFrame * CFrame.new(5,0,5)
-            model:SetPrimaryPartCFrame(pos)
-            notify("Vehicle",model.Name.." getirildi",3)
-            return
+-- Noclip
+local noclip = false
+PlayerTab:CreateToggle({
+    Name="Local Noclip",
+    CurrentValue=false,
+    Flag="ps_noclip",
+    Callback=function(state)
+        noclip = state
+        if character then
+            for _,p in pairs(character:GetDescendants()) do
+                if p:IsA("BasePart") then p.CanCollide = not state end
+            end
         end
-        local clone=model:Clone()
-        clone.Parent=workspace
-        local pivot = clone.PrimaryPart and clone.PrimaryPart.Position or (clone:FindFirstChildWhichIsA("BasePart") and clone:FindFirstChildWhichIsA("BasePart").Position)
-        if not pivot then error("Pivot bulunamadı") end
-        local desired = character.PrimaryPart.Position + character.PrimaryPart.CFrame.LookVector*5 + Vector3.new(0,1,0)
-        local delta = desired - pivot
-        for _,p in pairs(clone:GetDescendants()) do if p:IsA("BasePart") then p.CFrame=p.CFrame+delta end end
-        if not clone.PrimaryPart then clone.PrimaryPart=clone:FindFirstChildWhichIsA("BasePart") end
-        notify("Vehicle",model.Name.." kopyası getirildi",3)
+        notify("Player","Noclip: "..tostring(state),2)
+    end
+})
+
+-- Double Jump
+local doubleJump = false
+local canDoubleJump = true
+local humanoid = character:FindFirstChildOfClass("Humanoid")
+if humanoid then
+    humanoid.StateChanged:Connect(function(old,new)
+        if new == Enum.HumanoidStateType.Landed then
+            canDoubleJump = true
+        end
     end)
-    if not ok then return false,tostring(err) end
-    return true
 end
-
--- -------------------- KEYBINDS --------------------
-local keybinds = { CloseGUI=Enum.KeyCode.K }
-UserInputService.InputBegan:Connect(function(input,gp)
-    if gp then return end
-    if input.KeyCode==keybinds.CloseGUI then
-        pcall(function() Window:Destroy() end)
-        notify("GUI","Kapandı",2)
+PlayerTab:CreateToggle({
+    Name="Double Jump",
+    CurrentValue=false,
+    Flag="ps_djump",
+    Callback=function(state)
+        doubleJump = state
+        notify("Player","Double Jump: "..tostring(state),2)
+    end
+})
+UserInputService.JumpRequest:Connect(function()
+    if doubleJump and canDoubleJump and character and character:FindFirstChildOfClass("Humanoid") then
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid:GetState() ~= Enum.HumanoidStateType.Seated then
+            humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            canDoubleJump = false
+            spawnFX("Bright yellow",0.4,0.3,3)
+        end
     end
 end)
 
--- -------------------- PLAYER TAB --------------------
-local PlayerTab = Window:CreateTab("Player", nil)
-PlayerTab:CreateSlider({ Name="WalkSpeed", Range={16,200}, Increment=1, CurrentValue=16, Flag="ps_ws", Callback=function(v) if character and character:FindFirstChildOfClass("Humanoid") then character:FindFirstChildOfClass("Humanoid").WalkSpeed=v end end })
-PlayerTab:CreateSlider({ Name="JumpPower", Range={50,300}, Increment=1, CurrentValue=50, Flag="ps_jp", Callback=function(v) if character and character:FindFirstChildOfClass("Humanoid") then character:FindFirstChildOfClass("Humanoid").JumpPower=v end end })
-PlayerTab:CreateToggle({ Name="Invisible (Local)", CurrentValue=false, Flag="ps_invis", Callback=function(s) if character then for _,p in pairs(character:GetDescendants()) do if p:IsA("BasePart") then p.LocalTransparencyModifier = s and 1 or 0 end end notify("Player","Local invis: "..tostring(s),2) end end })
-PlayerTab:CreateToggle({ Name="Noclip (Local)", CurrentValue=false, Flag="ps_noclip", Callback=function(s) if character then for _,p in pairs(character:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide=not s end end notify("Player","Local noclip: "..tostring(s),2) end end })
-PlayerTab:CreateButton({ Name="Reset Character", Callback=function() localPlayer:LoadCharacter() end })
-PlayerTab:CreateButton({ Name="Nearby Players", Callback=function()
-    if not character or not character.PrimaryPart then notify("Player","Karakter yok",2); return end
-    local list={}
-    for _,p in ipairs(Players:GetPlayers()) do
-        if p~=localPlayer and p.Character and p.Character.PrimaryPart then
-            local d=(p.Character.PrimaryPart.Position-character.PrimaryPart.Position).Magnitude
-            if d<=50 then table.insert(list,p.Name.."("..math.floor(d).."m)") end
-        end
-    end
-    notify("Nearby",#list>0 and table.concat(list,", ") or "Yakında kimse yok",4)
-end })
-
--- -------------------- TELEPORT TAB --------------------
-local TeleportTab = Window:CreateTab("Teleport", nil)
+-- ===== Teleport Tab =====
+local TeleportTab = Window:CreateTab("Teleport",nil)
+local teleports = {
+    ["Spawn"]=Vector3.new(5906,26.25,-1846),
+    ["NALBURİYE"]=Vector3.new(6484,26,-1692),
+    ["MALİKANE"]=Vector3.new(5093,40,-1219),
+    ["Ev (Verilen)"]=Vector3.new(5114.3,40,-1150),
+    ["BUGLU EV"]=Vector3.new(5077,40,-1165),
+    ["TOKİLER"]=Vector3.new(4575,26,-1151)
+}
 local function safeTeleportTo(pos)
     if character and character.PrimaryPart then
-        TweenService:Create(character.PrimaryPart, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {CFrame=CFrame.new(pos)}):Play()
-        notify("Teleport","Işınlandı",2)
+        character:SetPrimaryPartCFrame(CFrame.new(pos))
+        spawnFX("Bright cyan",0.3,0.3,5)
+        notify("Teleport","Gitildi!",2)
     end
 end
-TeleportTab:CreateButton({ Name="Spawn", Callback=function() safeTeleportTo(Vector3.new(5906,26.25,-1846)) end })
-
--- -------------------- VEHICLE TAB --------------------
-local VehicleTab = Window:CreateTab("Vehicle", nil)
-VehicleTab:CreateButton({ Name="16' Boxster GTS Finder", Callback=function()
-    local matches=findModelByName("16' Boxster GTS")
-    if #matches==0 then notify("Vehicle","Bulunamadı",3); return end
-    bringModelToPlayer(matches[1])
-end })
-
--- -------------------- DANCE TAB --------------------
-local DanceTab = Window:CreateTab("Dance (R6)", nil)
-local danceAnims={{Name="Dance 1",Id=180435571},{Name="Dance 2",Id=180426354}}
-local function playAnim(id)
-    if not character then notify("Dance","Karakter yok",2); return end
-    local humanoid = character:FindFirstChildOfClass("Humanoid")
-    if not humanoid then notify("Dance","Humanoid yok",2); return end
-    local animator = humanoid:FindFirstChildOfClass("Animator") or humanoid:FindFirstChild("Animator")
-    if not animator then animator = Instance.new("Animator"); animator.Parent=humanoid end
-    local animation = Instance.new("Animation")
-    animation.AnimationId="rbxassetid://"..tostring(id)
-    local track = animator:LoadAnimation(animation)
-    track:Play()
-    Debris:AddItem(animation,12)
-    delay(10,function() pcall(function() track:Stop() end) end)
+for name,pos in pairs(teleports) do
+    TeleportTab:CreateButton({Name=name, Callback=function() safeTeleportTo(pos) end})
 end
-for _,a in ipairs(danceAnims) do DanceTab:CreateButton({Name=a.Name,Callback=function() playAnim(a.Id) end}) end
 
--- -------------------- MISC --------------------
-MiscTab=Window:CreateTab("Misc",nil)
-MiscTab:CreateButton({Name="Show Version",Callback=function() print("AdanaCityUltraSmart v2.0"); notify("Misc","Versiyon konsola yazıldı",3) end})
+-- ===== Final =====
+notify("AdanaCityUltra","",5)
+print("AdanaCityUltra Mega FX Hub loaded.")
 
-notify("AdanaCityUltraSmart","Yüklendi — Ultra fancy hub, toastlar, HUD, R6 dans ve daha fazlası hazır!",5)
-print("AdanaCityUltraSmart v2.0 loaded. Enjoy uwu~")
+
+    spawnConnection:Disconnect()
+
+    local fadeTween = TweenService:Create(frame, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut), {BackgroundTransparency = 1})
+    fadeTween:Play()
+    fadeTween.Completed:Connect(function()
+        screenGui:Destroy()
+    end)
+end)
